@@ -1,0 +1,29 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Demo//Air Quality Calendar Demo//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:morning-jog@demo.com
+DTSTART:20250823T070000Z
+DTEND:20250823T080000Z
+SUMMARY:Morning Jog in Central Park
+LOCATION:Central Park, New York, NY
+DESCRIPTION:Outdoor exercise in Central Park. Location: 40.7829,-73.9654
+END:VEVENT
+BEGIN:VEVENT
+UID:wedding-reception@demo.com
+DTSTART:20250823T170000Z
+DTEND:20250823T220000Z
+SUMMARY:Outdoor Wedding Reception
+LOCATION:Griffith Observatory, Los Angeles, CA
+DESCRIPTION:Outdoor wedding ceremony and reception. Location: 34.1184,-118.3004
+END:VEVENT
+BEGIN:VEVENT
+UID:beach-volleyball@demo.com
+DTSTART:20250824T100000Z
+DTEND:20250824T160000Z
+SUMMARY:Beach Volleyball Tournament
+LOCATION:Santa Monica Beach, CA
+DESCRIPTION:Annual beach volleyball competition. Location: 34.0195,-118.4912
+END:VEVENT
+END:VCALENDAR
