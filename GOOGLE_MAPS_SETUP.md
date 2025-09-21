@@ -21,7 +21,7 @@ To enable Google Maps functionality in the air quality app, you need to set up a
    - Edit the file: `web/.env.local`
    - Replace `your_google_maps_api_key_here` with your actual API key:
    ```
-   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyBvOkBo-VTUdwElyV3T5tF4OQ4nHfzp9Cc
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_actual_api_key_here
    ```
 
 6. **Secure the API Key** (recommended):
