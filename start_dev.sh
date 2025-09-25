@@ -18,7 +18,7 @@ trap cleanup EXIT INT TERM
 # Start the FastAPI backend
 echo "🚀 Starting FastAPI backend server..."
 cd api
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+source venv/bin/activate && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
 API_PID=$!
 
 # Wait a moment for API to start

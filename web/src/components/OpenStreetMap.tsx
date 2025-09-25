@@ -10,21 +10,28 @@ interface OpenStreetMapProps {
   onToggleMaximize?: () => void
   mapType?: 'terrain' | 'satellite' | 'roadmap'
   onMapTypeChange?: (type: 'terrain' | 'satellite' | 'roadmap') => void
+  showAQIOverlay?: boolean
+  onToggleAQIOverlay?: () => void
 }
 
-export function OpenStreetMap({ 
-  onLocationSelect, 
-  selectedLocation, 
+export function OpenStreetMap({
+  onLocationSelect,
+  selectedLocation,
   height = '500px',
   isMaximized = false,
   onToggleMaximize,
-  mapType = 'terrain',
-  onMapTypeChange
+  mapType = 'satellite',
+  onMapTypeChange,
+  showAQIOverlay = false,
+  onToggleAQIOverlay
 }: OpenStreetMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<any>(null)
   const [marker, setMarker] = useState<any>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [aqiHeatmapLayer, setAqiHeatmapLayer] = useState<any>(null)
+  const [aqiData, setAqiData] = useState<any[]>([])
+  const [isLoadingAQI, setIsLoadingAQI] = useState(false)
 
   // Tile layer URLs for different map types
   const tileUrls = {
@@ -38,6 +45,77 @@ export function OpenStreetMap({
     roadmap: '© OpenStreetMap contributors',
     terrain: '© OpenTopoMap (CC-BY-SA)',
     satellite: '© Esri, Maxar, Earthstar Geographics'
+  }
+
+  // Fetch AQI data for current map bounds
+  const fetchAQIData = async (mapInstance: any) => {
+    if (!mapInstance) return
+
+    setIsLoadingAQI(true)
+    try {
+      const bounds = mapInstance.getBounds()
+      const north = bounds.getNorth()
+      const south = bounds.getSouth()
+      const east = bounds.getEast()
+      const west = bounds.getWest()
+
+      const response = await fetch(
+        `http://localhost:8000/aqi/regional?north=${north}&south=${south}&east=${east}&west=${west}&grid_size=10`,
+        {
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Fetched AQI data:', {
+          dataPoints: data.data_points,
+          sampleData: data.data?.slice(0, 3),
+          bounds: data.bounds
+        })
+        setAqiData(data.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch AQI data:', error)
+    } finally {
+      setIsLoadingAQI(false)
+    }
+  }
+
+  // Create AQI heatmap layer
+  const createAQIHeatmapLayer = () => {
+    if (!window.L || !window.L.heatLayer || !aqiData.length) {
+      console.log('Heatmap layer not available:', {
+        hasL: !!window.L,
+        hasHeatLayer: !!(window.L && window.L.heatLayer),
+        dataLength: aqiData.length
+      })
+      return null
+    }
+
+    const heatmapPoints = aqiData.map(point => [
+      point.lat,
+      point.lon,
+      Math.max(0.3, point.aqi / 150) // Better visibility with higher minimum intensity
+    ])
+
+    console.log('Creating heatmap with points:', heatmapPoints.length, heatmapPoints.slice(0, 3))
+
+    return window.L.heatLayer(heatmapPoints, {
+      radius: 50,
+      blur: 30,
+      maxZoom: 18,
+      max: 2.0, // Increased max for better visibility
+      minOpacity: 0.4, // Minimum opacity for better visibility
+      gradient: {
+        0.0: 'rgba(0,228,0,0.8)',    // Good - Green with transparency
+        0.2: 'rgba(255,255,0,0.8)',  // Moderate - Yellow
+        0.4: 'rgba(255,126,0,0.8)',  // Unhealthy for Sensitive - Orange
+        0.6: 'rgba(255,0,0,0.8)',    // Unhealthy - Red
+        0.8: 'rgba(143,63,151,0.8)', // Very Unhealthy - Purple
+        1.0: 'rgba(126,0,35,0.8)'    // Hazardous - Maroon
+      }
+    })
   }
 
   useEffect(() => {
@@ -54,7 +132,13 @@ export function OpenStreetMap({
         const script = document.createElement('script')
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
         script.onload = () => {
-          initializeMap()
+          // Load Leaflet Heatmap plugin
+          const heatmapScript = document.createElement('script')
+          heatmapScript.src = 'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js'
+          heatmapScript.onload = () => {
+            initializeMap()
+          }
+          document.head.appendChild(heatmapScript)
         }
         document.head.appendChild(script)
       } else if (window.L) {
@@ -74,7 +158,7 @@ export function OpenStreetMap({
       }).setView([selectedLocation?.lat || 34.0522, selectedLocation?.lon || -118.2437], 10)
 
       // Add tile layer
-      const tileLayer = L.tileLayer(tileUrls[mapType], {
+      L.tileLayer(tileUrls[mapType], {
         attribution: attributions[mapType],
         maxZoom: 18
       }).addTo(mapInstance)
@@ -92,8 +176,26 @@ export function OpenStreetMap({
         }
       })
 
+      // Add map move listeners to refresh AQI data
+      mapInstance.on('moveend', () => {
+        if (showAQIOverlay) {
+          fetchAQIData(mapInstance)
+        }
+      })
+
+      mapInstance.on('zoomend', () => {
+        if (showAQIOverlay) {
+          fetchAQIData(mapInstance)
+        }
+      })
+
       setMap(mapInstance)
       setIsLoaded(true)
+
+      // Initial AQI data fetch if overlay is already enabled
+      if (showAQIOverlay) {
+        fetchAQIData(mapInstance)
+      }
     }
 
     loadLeaflet()
@@ -118,7 +220,7 @@ export function OpenStreetMap({
 
       // Add new tile layer
       const L = window.L
-      const baseTileLayer = L.tileLayer(tileUrls[mapType], {
+      L.tileLayer(tileUrls[mapType], {
         attribution: attributions[mapType],
         maxZoom: 18
       }).addTo(map)
@@ -182,43 +284,99 @@ export function OpenStreetMap({
     }
   }, [selectedLocation, map])
 
+  // Handle AQI overlay toggling
+  useEffect(() => {
+    if (!map || !isLoaded) return
+
+    if (showAQIOverlay) {
+      // Fetch AQI data and add overlay
+      fetchAQIData(map)
+    } else {
+      // Remove existing heatmap layer
+      if (aqiHeatmapLayer) {
+        map.removeLayer(aqiHeatmapLayer)
+        setAqiHeatmapLayer(null)
+      }
+    }
+  }, [showAQIOverlay, map, isLoaded])
+
+  // Update heatmap when AQI data changes
+  useEffect(() => {
+    if (!map || !showAQIOverlay || !aqiData.length) return
+
+    // Remove existing heatmap layer
+    if (aqiHeatmapLayer) {
+      map.removeLayer(aqiHeatmapLayer)
+    }
+
+    // Create and add new heatmap layer
+    const newHeatmapLayer = createAQIHeatmapLayer()
+    if (newHeatmapLayer) {
+      newHeatmapLayer.addTo(map)
+      setAqiHeatmapLayer(newHeatmapLayer)
+    }
+  }, [aqiData, map, showAQIOverlay])
+
+  // Handle fullscreen mode changes - invalidate map size
+  useEffect(() => {
+    if (!map) return
+
+    // Small delay to let the DOM update before invalidating size
+    const timer = setTimeout(() => {
+      map.invalidateSize(true)
+
+      // If AQI overlay is active, refresh data for new view
+      if (showAQIOverlay) {
+        fetchAQIData(map)
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [isMaximized, map])
+
   return (
     <div className="relative">
-      {/* Map Type Selector */}
-      {onMapTypeChange && (
-        <div className="absolute top-4 right-4 z-[1000] flex bg-white dark:bg-black rounded-2xl p-1 shadow-lg border border-gray-200 dark:border-gray-600">
+      {/* Compact Controls */}
+      <div className="absolute top-4 right-4 z-[1000] flex gap-2">
+        {/* Map Type Dropdown */}
+        {onMapTypeChange && (
+          <div className="relative">
+            <select
+              value={mapType}
+              onChange={(e) => onMapTypeChange(e.target.value as any)}
+              className="bg-white dark:bg-black rounded-lg px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="satellite">🛰️ Satellite</option>
+              <option value="terrain">🌄 Terrain</option>
+              <option value="roadmap">🗺️ Streets</option>
+            </select>
+          </div>
+        )}
+
+        {/* AQI Overlay Toggle */}
+        {onToggleAQIOverlay && (
           <button
-            onClick={() => onMapTypeChange('roadmap')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all ${
-              mapType === 'roadmap' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            onClick={onToggleAQIOverlay}
+            className={`px-3 py-2 rounded-lg shadow-lg border text-sm font-medium transition-all relative ${
+              showAQIOverlay
+                ? 'bg-green-500 text-white border-green-600 hover:bg-green-600'
+                : 'bg-white dark:bg-black text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
+            title={`${showAQIOverlay ? 'Hide' : 'Show'} AQI Overlay`}
           >
-            🗺️ Streets
+            {isLoadingAQI ? (
+              <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <span>🌬️ AQI</span>
+                {showAQIOverlay && (
+                  <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                )}
+              </div>
+            )}
           </button>
-          <button
-            onClick={() => onMapTypeChange('terrain')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all ${
-              mapType === 'terrain' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            🌄 Terrain
-          </button>
-          <button
-            onClick={() => onMapTypeChange('satellite')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all ${
-              mapType === 'satellite' 
-                ? 'bg-blue-500 text-white' 
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            🛰️ Satellite
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Maximize Button */}
       {onToggleMaximize && (

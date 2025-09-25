@@ -53,7 +53,6 @@ export function AqiReferenceTable() {
         className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors rounded-3xl"
       >
         <div className="flex items-center space-x-2">
-          <span className="text-2xl">📊</span>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
             AQI Reference Guide
           </h3>
@@ -162,7 +161,6 @@ export function AqiReferenceTable() {
 
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
                 <div className="flex items-start space-x-2">
-                  <span className="text-blue-600 dark:text-blue-400 mt-0.5">ℹ️</span>
                   <div className="text-sm">
                     <p className="font-semibold text-blue-800 dark:text-blue-300 mb-2">
                       About This Guide
@@ -182,7 +180,6 @@ export function AqiReferenceTable() {
 
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4">
                 <div className="flex items-start space-x-2">
-                  <span className="text-amber-600 dark:text-amber-400 mt-0.5">⚠️</span>
                   <div className="text-sm">
                     <p className="font-semibold text-amber-800 dark:text-amber-300 mb-1">
                       Important Notes

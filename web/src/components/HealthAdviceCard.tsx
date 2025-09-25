@@ -104,13 +104,13 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
 
   const getHealthIcon = (level: string) => {
     switch (level) {
-      case 'Good': return '😊'
-      case 'Moderate': return '😐'
-      case 'Unhealthy for Sensitive Groups': return '😷'
-      case 'Unhealthy': return '😨'
-      case 'Very Unhealthy': return '🚨'
-      case 'Hazardous': return '☠️'
-      default: return '🌤️'
+      case 'Good': return ''
+      case 'Moderate': return ''
+      case 'Unhealthy for Sensitive Groups': return ''
+      case 'Unhealthy': return ''
+      case 'Very Unhealthy': return ''
+      case 'Hazardous': return ''
+      default: return ''
     }
   }
 
@@ -119,10 +119,9 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
   return (
     <div className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 rounded-3xl p-6 border border-white/20 dark:border-gray-700/50 shadow-xl">
       <div className="flex items-start gap-4">
-        <div className="text-4xl animate-pulse-slow">{getHealthIcon(currentHealthData.level)}</div>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">💊 Health Advisory</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Health Advisory</h3>
             <AqiBadge aqi={aqi} size="sm" />
           </div>
           
@@ -136,7 +135,6 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-4">
               <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
-                <span className="mr-2">🌤️</span>
                 Current Conditions - {currentHealthData.level}
               </h4>
               <p className="text-sm text-gray-700 dark:text-gray-300">{currentHealthData.message}</p>
@@ -144,7 +142,6 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
             
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-4">
               <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
-                <span className="mr-2">💡</span>
                 Key Recommendations
               </h4>
               <ul className="space-y-2">
@@ -171,7 +168,6 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
             {currentHealthData.mask_needed && (
               <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-4">
                 <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
-                  <span className="mr-2">😷</span>
                   Mask Recommendation
                 </h4>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -184,7 +180,6 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
 
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-4">
               <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
-                <span className="mr-2">👥</span>
                 Sensitive Groups
               </h4>
               <p className="text-sm text-gray-700 dark:text-gray-300">{currentHealthData.sensitive_groups}</p>
@@ -193,7 +188,6 @@ export function HealthAdviceCard({ aqi }: HealthAdviceCardProps) {
           
           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
             <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-              <span className="mr-2">⚖️</span>
               Based on international air quality standards including EPA and WHO guidelines. Consult healthcare providers for personal medical advice.
             </p>
           </div>
